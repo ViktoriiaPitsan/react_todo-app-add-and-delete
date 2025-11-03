@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserWarning } from './UserWarning';
 import {
   todosService,
@@ -13,12 +13,20 @@ import { TodoItem } from './components/TodoItem';
 import { TODO_STATUS_FILTER_OPTIONS, Status } from './types/TodoStatusFilter';
 import { getFilteredTodos, Todo } from './types/Todo';
 import { useError } from './hooks/useError';
+import { TodoCreate } from './types/TodoCreate';
+import { TodoCreateForm } from './components/TodoCreateForm';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loadingTodoIds, setLoadingTodoIds] = useState<Todo['id'][]>([]);
   const [selectedStatus, setSelectedStatus] = useState(Status.ALL);
+  const [tempTodo, setTempTodo] = useState<Todo | null>(null);
+
   const { error, handleRemoveError, handleSetError } = useError();
+
+  const todoTitleInputRef = useRef<HTMLInputElement>(null);
+
+  const completedTodos = todos.filter(todo => todo.completed);
 
   const handleAddTodoToLoading = (todoId: Todo['id']) => {
     setLoadingTodoIds(currentLoading => [...currentLoading, todoId]);
@@ -52,7 +60,61 @@ export const App: React.FC = () => {
       })
       .finally(() => {
         handleRemoveTodoFromLoading(todoId);
+        if (todoTitleInputRef.current) {
+          todoTitleInputRef.current.focus();
+        }
       });
+  };
+
+  const handleBulkDeleteTodos = (todoIds: Todo['id'][]) => {
+    todoIds.forEach(todoId => handleDeleteTodo(todoId));
+  };
+
+  const handleDeleteCompleted = () => {
+    handleBulkDeleteTodos(completedTodos.map(({ id }) => id));
+  };
+
+  const handleAddTodo = async (
+    newTodoTitle: string,
+    resetTitle: () => void,
+  ) => {
+    if (!todoTitleInputRef.current) {
+      return;
+    }
+
+    handleRemoveError();
+
+    const todoCreate: TodoCreate = {
+      title: newTodoTitle,
+      completed: false,
+      userId: USER_ID,
+    };
+
+    setTempTodo({
+      id: 0,
+      ...todoCreate,
+    });
+
+    todoTitleInputRef.current.disabled = true;
+
+    try {
+      const createdTodo = await todosService.addTodo(todoCreate);
+
+      setTodos(currentTodos => [...currentTodos, createdTodo]);
+      resetTitle();
+    } catch (err) {
+      handleSetError(
+        todosServiceErrorText[TodosServiceErrors.UNABLE_TO_ADD_A_TODO],
+      );
+    } finally {
+      setTempTodo(null);
+      if (!todoTitleInputRef.current) {
+        return;
+      }
+
+      todoTitleInputRef.current.disabled = false;
+      todoTitleInputRef.current?.focus();
+    }
   };
 
   useEffect(() => {
@@ -86,15 +148,11 @@ export const App: React.FC = () => {
             data-cy="ToggleAllButton"
           />
 
-          {/* Add a todo on form submit */}
-          <form>
-            <input
-              data-cy="NewTodoField"
-              type="text"
-              className="todoapp__new-todo"
-              placeholder="What needs to be done?"
-            />
-          </form>
+          <TodoCreateForm
+            ref={todoTitleInputRef}
+            onSubmit={handleAddTodo}
+            onError={handleSetError}
+          />
         </header>
 
         {filteredTodos.length !== 0 && (
@@ -107,6 +165,8 @@ export const App: React.FC = () => {
                 onDelete={handleDeleteTodo}
               />
             ))}
+
+            {tempTodo && <TodoItem todo={tempTodo} isLoading />}
           </section>
         )}
 
@@ -138,11 +198,12 @@ export const App: React.FC = () => {
               )}
             </nav>
 
-            {/* this button should be disabled if there are no completed todos */}
             <button
               type="button"
               className="todoapp__clear-completed"
               data-cy="ClearCompletedButton"
+              disabled={!completedTodos.length}
+              onClick={handleDeleteCompleted}
             >
               Clear completed
             </button>

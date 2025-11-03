@@ -5,7 +5,7 @@ import cn from 'classnames';
 type Props = {
   todo: Todo;
   isLoading?: boolean;
-  onDelete: (todoId: Todo['id']) => void;
+  onDelete?: (todoId: Todo['id']) => void;
 };
 
 export const TodoItem: React.FC<Props> = ({
@@ -51,7 +51,7 @@ export const TodoItem: React.FC<Props> = ({
             type="button"
             className="todo__remove"
             data-cy="TodoDelete"
-            onClick={() => onDelete(todo.id)}
+            onClick={() => onDelete?.(todo.id)}
           >
             ×
           </button>

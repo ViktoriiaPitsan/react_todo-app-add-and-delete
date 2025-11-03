@@ -1,4 +1,5 @@
 import { Todo } from '../types/Todo';
+import { TodoCreate } from '../types/TodoCreate';
 import { client } from '../utils/fetchClient';
 
 export const USER_ID = 3662;
@@ -28,7 +29,12 @@ export const deleTodo = (todoId: Todo['id']) => {
   return client.delete(`/todos/${todoId}`);
 };
 
+export const addTodo = (todoCreate: TodoCreate) => {
+  return client.post<Todo>('/todos', todoCreate);
+};
+
 export const todosService = {
   getTodos,
   deleTodo,
+  addTodo,
 };
