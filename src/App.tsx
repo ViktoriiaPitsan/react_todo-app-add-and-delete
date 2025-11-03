@@ -12,12 +12,13 @@ import cn from 'classnames';
 import { TodoItem } from './components/TodoItem';
 import { TODO_STATUS_FILTER_OPTIONS, Status } from './types/TodoStatusFilter';
 import { getFilteredTodos, Todo } from './types/Todo';
+import { useError } from './hooks/useError';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loadingTodoIds, setLoadingTodoIds] = useState<Todo['id'][]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState(Status.ALL);
+  const { error, handleRemoveError, handleSetError } = useError();
 
   const handleAddTodoToLoading = (todoId: Todo['id']) => {
     setLoadingTodoIds(currentLoading => [...currentLoading, todoId]);
@@ -33,8 +34,6 @@ export const App: React.FC = () => {
     return loadingTodoIds.includes(todoId);
   };
 
-  const handleRemoveError = () => setError('');
-
   const handleDeleteTodo = (todoId: Todo['id']) => {
     handleAddTodoToLoading(todoId);
     handleRemoveError();
@@ -47,7 +46,7 @@ export const App: React.FC = () => {
         );
       })
       .catch(() => {
-        setError(
+        handleSetError(
           todosServiceErrorText[TodosServiceErrors.UNABLE_TO_DELETE_A_TODO],
         );
       })
@@ -57,28 +56,16 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!error) {
-      return;
-    }
-
-    const timer = setTimeout(handleRemoveError, 3000);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [error]);
-
-  useEffect(() => {
     todosService
       .getTodos()
       .then(setTodos)
       .catch(() => {
-        setError(
+        handleSetError(
           todosServiceErrorText[TodosServiceErrors.UNABLE_TO_LOAD_TODOS],
         );
       })
       .finally(() => {});
-  }, []);
+  }, [handleSetError]);
 
   const filteredTodos = getFilteredTodos(todos, selectedStatus);
 
