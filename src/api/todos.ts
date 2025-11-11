@@ -33,8 +33,16 @@ export const addTodo = (todoCreate: TodoCreate) => {
   return client.post<Todo>('/todos', todoCreate);
 };
 
+export const updateTodoStatus = (
+  todoId: Todo['id'],
+  statusUpdate: { completed: boolean },
+) => {
+  return client.patch<Todo>(`/todos/${todoId}`, statusUpdate);
+};
+
 export const todosService = {
   getTodos,
   deleTodo,
   addTodo,
+  updateTodoStatus,
 };

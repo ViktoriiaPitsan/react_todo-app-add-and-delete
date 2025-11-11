@@ -6,12 +6,14 @@ type Props = {
   todo: Todo;
   isLoading?: boolean;
   onDelete?: (todoId: Todo['id']) => void;
+  onToggleStatus?: (todoId: Todo['id']) => void;
 };
 
 export const TodoItem: React.FC<Props> = ({
   todo,
   isLoading = false,
   onDelete,
+  onToggleStatus,
 }) => {
   const [editing] = useState(false);
 
@@ -29,6 +31,7 @@ export const TodoItem: React.FC<Props> = ({
           type="checkbox"
           className="todo__status"
           checked={todo.completed}
+          onChange={() => onToggleStatus && onToggleStatus(todo.id)}
         />
       </label>
 

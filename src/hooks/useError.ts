@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export const useError = () => {
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRemoveError = useCallback(() => setError(''), []);
+  const handleRemoveError = useCallback(() => setError(null), []);
 
   const handleSetError = useCallback(
     (errorText: string) => setError(errorText),
